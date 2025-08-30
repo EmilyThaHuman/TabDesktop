@@ -154,7 +154,8 @@ export function NavFolders({
                             <img
                               src={link.favicon}
                               alt=""
-                              className="h-4 w-4 flex-shrink-0"
+                              className="h-4 w-4 flex-shrink-0 rounded-sm"
+                              style={{ backgroundColor: '#414141' }}
                               onError={(e) => {
                                 e.currentTarget.style.display = 'none'
                               }}

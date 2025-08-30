@@ -7,19 +7,21 @@ export function useShortcuts() {
   const [loading, setLoading] = useState(true)
 
   // Load shortcuts from database
-  const loadShortcuts = useCallback(async () => {
+  const loadShortcuts = useCallback(async (isInitial = false) => {
     try {
       const dbShortcuts = await shortcutOperations.getAll()
       setShortcuts(dbShortcuts)
     } catch (error) {
       console.error('Failed to load shortcuts:', error)
     } finally {
-      setLoading(false)
+      if (isInitial) {
+        setLoading(false)
+      }
     }
   }, [])
 
   useEffect(() => {
-    loadShortcuts()
+    loadShortcuts(true)
   }, [loadShortcuts])
 
   const addShortcut = useCallback(async (name: string, url: string, favicon?: string) => {

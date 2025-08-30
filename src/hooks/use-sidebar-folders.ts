@@ -24,28 +24,36 @@ export function useSidebarFolders() {
   }, [])
 
   // Load folders from database
-  const loadFolders = useCallback(async () => {
+  const loadFolders = useCallback(async (isInitial = false) => {
     try {
       const dbFolders = await folderOperations.getAll()
-      const sidebarFolders = await Promise.all(
-        dbFolders.map(folder => convertToSidebarFolder(folder))
-      )
-      setFolders(sidebarFolders)
-    } catch (error) {
-      console.error('Failed to load folders:', error)
-      // Initialize with default folders if database is empty
-      if (folders.length === 0) {
+      if (dbFolders.length === 0 && isInitial) {
+        // Initialize with default folders if database is empty
         await folderOperations.create('Work')
         await folderOperations.create('Personal')
-        await loadFolders()
+        // Load again after creating defaults
+        const retryDbFolders = await folderOperations.getAll()
+        const retrySidebarFolders = await Promise.all(
+          retryDbFolders.map(folder => convertToSidebarFolder(folder))
+        )
+        setFolders(retrySidebarFolders)
+      } else {
+        const sidebarFolders = await Promise.all(
+          dbFolders.map(folder => convertToSidebarFolder(folder))
+        )
+        setFolders(sidebarFolders)
       }
+    } catch (error) {
+      console.error('Failed to load folders:', error)
     } finally {
-      setLoading(false)
+      if (isInitial) {
+        setLoading(false)
+      }
     }
-  }, [convertToSidebarFolder, folders.length])
+  }, [convertToSidebarFolder])
 
   useEffect(() => {
-    loadFolders()
+    loadFolders(true)
   }, [loadFolders])
 
   const addFolder = useCallback(async (name: string) => {
@@ -86,7 +94,7 @@ export function useSidebarFolders() {
 
   const addLink = useCallback(async (folderId: string, name: string, url: string) => {
     try {
-      const favicon = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=16`
+      const favicon = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=32`
       await linkOperations.create(folderId, name, url, favicon)
       await loadFolders()
     } catch (error) {
@@ -105,7 +113,7 @@ export function useSidebarFolders() {
 
   const editLink = useCallback(async (_folderId: string, linkId: string, name: string, url: string) => {
     try {
-      const favicon = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=16`
+      const favicon = `https://www.google.com/s2/favicons?domain=${new URL(url).hostname}&sz=32`
       await linkOperations.update(linkId, { name, url, favicon })
       await loadFolders()
     } catch (error) {

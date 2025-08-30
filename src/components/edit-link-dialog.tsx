@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useRef } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -12,25 +12,40 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Upload } from "lucide-react"
 import type { SidebarLink } from "@/types/sidebar"
 
 interface EditLinkDialogProps {
   link: SidebarLink | null
   open: boolean
   onOpenChange: (open: boolean) => void
-  onEditLink: (name: string, url: string) => void
+  onEditLink: (name: string, url: string, customImage?: string) => void
 }
 
 export function EditLinkDialog({ link, open, onOpenChange, onEditLink }: EditLinkDialogProps) {
   const [linkName, setLinkName] = useState("")
   const [linkUrl, setLinkUrl] = useState("")
+  const [customImage, setCustomImage] = useState<string | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
     if (link) {
       setLinkName(link.name)
       setLinkUrl(link.url)
+      setCustomImage(null)
     }
   }, [link])
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      const reader = new FileReader()
+      reader.onload = (event) => {
+        setCustomImage(event.target?.result as string)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
@@ -39,7 +54,7 @@ export function EditLinkDialog({ link, open, onOpenChange, onEditLink }: EditLin
       if (!url.startsWith('http://') && !url.startsWith('https://')) {
         url = 'https://' + url
       }
-      onEditLink(linkName.trim(), url)
+      onEditLink(linkName.trim(), url, customImage || undefined)
       onOpenChange(false)
     }
   }
@@ -80,6 +95,48 @@ export function EditLinkDialog({ link, open, onOpenChange, onEditLink }: EditLin
                 placeholder="Enter URL"
                 type="url"
               />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <Label className="text-right">
+                Custom Icon
+              </Label>
+              <div className="col-span-3 flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="flex items-center gap-2"
+                >
+                  <Upload className="h-3 w-3" />
+                  Upload Image
+                </Button>
+                {customImage && (
+                  <div className="flex items-center gap-2">
+                    <img 
+                      src={customImage} 
+                      alt="Custom icon" 
+                      className="h-6 w-6 rounded object-cover"
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setCustomImage(null)}
+                      className="text-xs"
+                    >
+                      Remove
+                    </Button>
+                  </div>
+                )}
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className="hidden"
+                />
+              </div>
             </div>
           </div>
           <DialogFooter>
